@@ -1,6 +1,7 @@
 import socket
 import threading
 from config import *
+from shutdown import shutdown
 
 # Start peer server to listen for download requests from others
 def start_server():
@@ -9,16 +10,39 @@ def start_server():
     s.bind(('', PEER_PORT))
     s.listen(CLIENT_LIMIT)
 
-    while True:
-        peer, addr = s.accept()
-        t = threading.Thread(target=peer_handler, args=(peer, addr,))
-        t.start()
+    try:
+        while True:
+            peer, addr = s.accept()
+            t = threading.Thread(target=peer_handler, args=(peer, addr, s))
+            t.start()
+    except:
+        print("Shutting down")
+    finally:
+        peer.close
 
 # Handle connection from other peers
-def peer_handler(peer, address):
-    lname = peer.recv(BUFFER_SIZE).decode()
-    sendFile(lname, peer)
-    peer.close()
+def peer_handler(peer, address, server):
+    response = peer.recv(BUFFER_SIZE).decode()
+    args = response.split()
+
+    # Handle shutdown exception
+    try:
+        opcode = args[0]
+    except:
+        return
+    
+    # Handle fetch command from other peers
+    if opcode == 'fetch':
+        lname = peer.recv(BUFFER_SIZE).decode()
+        sendFile(lname, peer)
+        peer.close()
+    
+    # Handle server shutdown
+    if opcode == 'shutdown':
+        peer.close()
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('localhost', PEER_PORT))
+        server.close()
+        return
     
 # Send file through socket
 def sendFile(filename, peer):
@@ -28,3 +52,7 @@ def sendFile(filename, peer):
 
 if __name__ == '__main__':
     threading.Thread(target=start_server).start()
+    while True:
+        if (str(input()) == 'shutdown'):
+            shutdown()
+            break

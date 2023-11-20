@@ -2,6 +2,7 @@ import os
 import socket
 import threading
 from config import *
+from shutdown import shutdown
 
 # Main function
 def start_server(): 
@@ -14,17 +15,26 @@ def start_server():
     if not os.path.exists("peers"):
         os.mkdir("peers")
 
-    
-    while True:
-        client, address = server.accept()
-        t = threading.Thread(target=client_handler, args=(client, address, ))
-        t.start()
+    try:
+        while True:
+            client, address = server.accept()
+            t = threading.Thread(target=client_handler, args=(client, address, server, ))
+            t.start()
+    except:
+        print("Shutting down")
+    finally:
+        client.close()
 
 # Handle client: publish / fetch
-def client_handler(client, address):
+def client_handler(client, address, server):
     response = client.recv(BUFFER_SIZE).decode()
     args = response.split()
-    opcode = args[0]
+
+    # Handle shutdown exception
+    try:
+        opcode = args[0]
+    except:
+        return
 
     # Handle publish lname fname
     if opcode == 'publish':
@@ -57,8 +67,19 @@ def client_handler(client, address):
                         break
             if found:
                 break
+    
+    # Handle server shutdown
+    if opcode == 'shutdown':
+        client.close()
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('localhost', PORT))
+        server.close()
+        return
         
     client.close()
 
 if __name__ == '__main__':
     threading.Thread(target=start_server).start()
+    while True:
+        if (str(input()) == 'shutdown'):
+            shutdown()
+            break

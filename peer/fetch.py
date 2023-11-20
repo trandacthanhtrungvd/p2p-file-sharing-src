@@ -51,6 +51,7 @@ def download(address, lname, fname):
     # Create a socket and connect to peer containing needed file
     download_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     download_socket.connect((address, PEER_PORT))
+    download_socket.send("fetch".encode())
     download_socket.send(lname.encode())
 
     # Create download folder
