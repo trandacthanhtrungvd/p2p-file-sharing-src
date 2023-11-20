@@ -24,18 +24,11 @@ def start_server():
 def peer_handler(peer, address, server):
     response = peer.recv(BUFFER_SIZE).decode()
     args = response.split()
-
     # Handle shutdown exception
     try:
         opcode = args[0]
     except:
         return
-    
-    # Handle fetch command from other peers
-    if opcode == 'fetch':
-        lname = peer.recv(BUFFER_SIZE).decode()
-        sendFile(lname, peer)
-        peer.close()
     
     # Handle server shutdown
     if opcode == 'shutdown':
@@ -44,12 +37,17 @@ def peer_handler(peer, address, server):
         server.close()
         return
     
-# Send file through socket
-def sendFile(filename, peer):
-    with open(filename, 'rb') as f:
+    if opcode == 'ping':
+        peer.send("Alive!".encode())
+        peer.close()
+        return
+
+    # Handle fetch command from other peers
+    with open(response, 'rb') as f:
         data = f.read()
         peer.sendall(data)
-
+    peer.close()
+    
 if __name__ == '__main__':
     threading.Thread(target=start_server).start()
     while True:

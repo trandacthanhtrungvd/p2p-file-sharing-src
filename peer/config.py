@@ -1,5 +1,5 @@
 HOST = ''
-SERVER = '1.2.3.4'
+SERVER = 'localhost'
 SERVER_PORT = 1234
 PEER_PORT = 4321
 CLIENT_LIMIT = 5

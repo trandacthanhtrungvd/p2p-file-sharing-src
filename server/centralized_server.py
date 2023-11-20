@@ -8,7 +8,7 @@ from shutdown import shutdown
 def start_server(): 
     # Create a socket and listen for commands from clients
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('', PORT))
+    server.bind(('', SERVER_PORT))
     server.listen(CLIENT_LIMIT)
 
     # Make a directory for savefiles
@@ -67,11 +67,14 @@ def client_handler(client, address, server):
                         break
             if found:
                 break
+
+        # Close scandir iterator
+        files.close()
     
     # Handle server shutdown
     if opcode == 'shutdown':
         client.close()
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('localhost', PORT))
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('localhost', SERVER_PORT))
         server.close()
         return
         
